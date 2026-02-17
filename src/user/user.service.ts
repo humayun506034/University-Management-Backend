@@ -13,9 +13,9 @@ import { getPagination } from 'src/common/utils/pagination';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { generateOtpEmailTemplate } from 'src/utils/generateOtpEmailTemplate';
 import { sendResponse } from 'src/utils/sendResponse';
+import { sendVerificationEmail } from 'src/utils/sendVerificationEmail';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { sendVerificationEmail } from 'src/utils/sendVerificationEmail';
 @Injectable()
 export class UserService {
   constructor(
@@ -23,6 +23,72 @@ export class UserService {
     private jwtService: JwtService,
     private configService: ConfigService,
   ) {}
+
+  private buildDepartmentCode(departmentName: string): string {
+    const words = departmentName
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+
+    const initials = words.map((word) => word[0]?.toUpperCase()).join('');
+    if (initials.length >= 2) {
+      return initials.slice(0, 6);
+    }
+
+    const fallback = departmentName
+      .replace(/[^a-zA-Z0-9]/g, '')
+      .toUpperCase()
+      .slice(0, 6);
+
+    return fallback || 'DEPT';
+  }
+
+  private async generateStudentIdByDepartment(departmentId: string) {
+    const department = await this.prisma.department.findFirst({
+      where: {
+        id: departmentId,
+        isDeleted: false,
+      },
+      select: {
+        name: true,
+      },
+    });
+
+    if (!department) {
+      throw new NotFoundException('Department not found');
+    }
+
+    const departmentCode = this.buildDepartmentCode(department.name);
+
+    const existingStudents = await this.prisma.user.findMany({
+      where: {
+        role: UserRole.STUDENT,
+        departmentId,
+        studentId: {
+          not: null,
+        },
+      },
+      select: {
+        studentId: true,
+      },
+    });
+
+    let maxSequence = 0;
+    for (const student of existingStudents) {
+      if (!student.studentId) continue;
+      if (!student.studentId.startsWith(`${departmentCode}-`)) continue;
+
+      const parts = student.studentId.split('-');
+      const sequencePart = parts[parts.length - 1];
+      const sequence = Number.parseInt(sequencePart, 10);
+      if (!Number.isNaN(sequence) && sequence > maxSequence) {
+        maxSequence = sequence;
+      }
+    }
+
+    const nextSequence = String(maxSequence + 1).padStart(4, '0');
+    return `${departmentCode}-${nextSequence}`;
+  }
 
   async create(createUserDto: CreateUserDto) {
     try {
@@ -33,20 +99,32 @@ export class UserService {
         throw new ConflictException('User already exist');
       }
 
-      // Generate 6-digit OTP
       const generateOtp = () =>
         Math.floor(100000 + Math.random() * 900000).toString();
       const otp = generateOtp();
-      // console.log('Generated OTP:', otp);
-
-      // OTP validity 10 minutes
       const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
-      // console.log('OTP valid until:', otpExpiry);
 
       const hashPassword = await bcrypt.hash(createUserDto.password, 10);
+      const role = createUserDto.role ?? UserRole.STUDENT;
+
+      let studentId = createUserDto.studentId;
+      if (role === UserRole.STUDENT) {
+        if (!createUserDto.departmentId) {
+          throw new BadRequestException(
+            'departmentId is required for STUDENT role',
+          );
+        }
+        studentId = await this.generateStudentIdByDepartment(
+          createUserDto.departmentId,
+        );
+      } else {
+        studentId = undefined;
+      }
 
       const userRegistrationData = {
         ...createUserDto,
+        role,
+        studentId,
         password: hashPassword,
         registrationOtp: otp,
         registrationOtpExpireIn: otpExpiry,
@@ -55,9 +133,7 @@ export class UserService {
 
       // Create user in DB
       await this.prisma.user.create({ data: userRegistrationData });
-      // Generate email HTML
       const htmlText = generateOtpEmailTemplate(otp);
-
       await sendVerificationEmail(
         this.configService,
         createUserDto.email,
@@ -66,7 +142,7 @@ export class UserService {
       );
 
       return sendResponse(
-        'User Registration Successfully, Check your email to verify your account, You have 10 minutes to verify your login. If you did not receive the email, please check your spam folder.',
+        'User Registration Successfully, Check your email to verify your account.',
       );
     } catch (error) {
       throw new BadRequestException(error);
@@ -83,10 +159,29 @@ export class UserService {
     }
 
     const hashPassword = await bcrypt.hash(createUserByAdmin.password, 10);
+    const role = createUserByAdmin.role as UserRole;
+    if (!Object.values(UserRole).includes(role)) {
+      throw new BadRequestException('Invalid role');
+    }
+
+    let studentId = createUserByAdmin.studentId;
+    if (role === UserRole.STUDENT) {
+      if (!createUserByAdmin.departmentId) {
+        throw new BadRequestException(
+          'departmentId is required for STUDENT role',
+        );
+      }
+      studentId = await this.generateStudentIdByDepartment(
+        createUserByAdmin.departmentId,
+      );
+    } else {
+      studentId = undefined;
+    }
 
     const userRegistrationData = {
       ...createUserByAdmin,
-      role: createUserByAdmin.role as string,
+      role,
+      studentId,
       isVerified: true,
       password: hashPassword,
     };
@@ -112,15 +207,10 @@ export class UserService {
       throw new ConflictException('User already verified');
     }
 
-    // Generate 6-digit OTP
     const generateOtp = () =>
       Math.floor(100000 + Math.random() * 900000).toString();
     const otp = generateOtp();
-    // console.log('Generated OTP:', otp);
-
-    // OTP validity 10 minutes
     const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
-    // console.log('OTP valid until:', otpExpiry);
 
     await this.prisma.user.update({
       where: { email },
@@ -130,9 +220,7 @@ export class UserService {
       },
     });
 
-    // Generate email HTML
     const htmlText = generateOtpEmailTemplate(otp);
-
     await sendVerificationEmail(
       this.configService,
       email,
@@ -140,9 +228,7 @@ export class UserService {
       htmlText,
     );
 
-    return sendResponse(
-      'Verification OTP Resend Successfully, Check your email to verify your account, You have 10 minutes to verify your login. If you did not receive the email, please check your spam folder.',
-    );
+    return sendResponse('Verification OTP Resend Successfully.');
   }
 
   async verifyRegisterOtp(email: string, otp: string) {
@@ -160,6 +246,7 @@ export class UserService {
     if (isUserExist.registrationOtp !== otp) {
       throw new BadRequestException('Invalid OTP');
     }
+
     if ((isUserExist.registrationOtpExpireIn as Date) < new Date()) {
       throw new BadRequestException('OTP Expired');
     }

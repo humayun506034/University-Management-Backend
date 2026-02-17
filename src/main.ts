@@ -1,12 +1,13 @@
 import { WsAdapter } from '@nestjs/platform-ws';
 import { ValidationPipe, INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { GlobalExceptionFilter } from 'src/common/filters/global-exception.filter';
 import { AppModule } from './app.module';
 
 export async function createNestApp(): Promise<INestApplication> {
   const app = await NestFactory.create(AppModule);
-  app.useWebSocketAdapter(new WsAdapter(app))
+  app.useWebSocketAdapter(new WsAdapter(app));
   app.useGlobalFilters(new GlobalExceptionFilter());
   app.useGlobalPipes(
     new ValidationPipe({
@@ -27,6 +28,28 @@ export async function createNestApp(): Promise<INestApplication> {
       'https://marcus-hein-alpha.vercel.app',
       '*',
     ],
+  });
+
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('University Management API')
+    .setDescription('API documentation for the project')
+    .setVersion('1.0.0')
+    .addApiKey(
+      {
+        type: 'apiKey',
+        in: 'header',
+        name: 'Authorization',
+        description: 'Paste token only. Do not add "Bearer " prefix.',
+      },
+      'token-auth',
+    )
+    .build();
+
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api-docs', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
   });
 
   return app;

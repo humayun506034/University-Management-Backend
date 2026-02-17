@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiBody, ApiConsumes, ApiOperation, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import multer from 'multer';
 import { Roles } from 'src/common/decorator/rolesDecorator';
 import { AuthGuard } from 'src/common/guards/auth/auth.guard';
@@ -18,6 +19,7 @@ import { ROLE } from 'src/user/entities/role.entity';
 import { MessagingService } from './messaging.service';
 import { uploadFileToCloudinary } from 'src/utils/common/uploadFileToCloudinary';
 
+@ApiTags('Messaging')
 @Controller('messaging')
 export class MessagingController {
   constructor(
@@ -25,6 +27,8 @@ export class MessagingController {
     private readonly messagingService: MessagingService,
   ) {}
   @UseGuards(AuthGuard)
+  @ApiSecurity('token-auth')
+  @ApiOperation({ summary: 'Get my messages list' })
   @Roles(
     ROLE.SUPER_ADMIN,
     ROLE.REGISTRAR,
@@ -38,6 +42,23 @@ export class MessagingController {
   }
 
   @UseGuards(AuthGuard)
+  @ApiSecurity('token-auth')
+  @ApiOperation({ summary: 'Send message (multipart form-data)' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'string',
+          example:
+            '{\n  "recipientEmail":"receiver@example.com",\n  "text":"Hello from Swagger"\n}',
+        },
+        file: { type: 'string', format: 'binary' },
+      },
+      required: ['data'],
+    },
+  })
   @Roles(
     ROLE.SUPER_ADMIN,
     ROLE.REGISTRAR,

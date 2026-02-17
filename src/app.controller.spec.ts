@@ -17,7 +17,7 @@ describe('AppController', () => {
   describe('root', () => {
     it('should return server message', () => {
       expect(appController.getHello()).toBe(
-        'Appoinment Management Server Running...',
+        'University Management Server Running...',
       );
     });
   });

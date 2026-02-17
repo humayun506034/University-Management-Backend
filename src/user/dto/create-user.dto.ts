@@ -1,18 +1,17 @@
+import { UserRole } from '@prisma/client';
+
 export class CreateUserDto {
   firstName: string;
   lastName: string;
   email: string;
-  companyName: string;
+  role?: UserRole;
   image?: string;
-  street?: string;
-  city?: string;
-  zip?: string;
-  country?: string;
-  phoneNumber: string;
-  vatUid?: string;
-  companyRegistrationNumber?: string;
+  studentId?: string;
+  employeeId?: string;
+  designation?: string;
+  departmentId?: string;
+  phoneNumber?: string;
   password: string;
-  subject?: string;
   registrationOtp?: string;
   registrationOtpExpireIn?: Date;
   loginOtp?: string;
@@ -27,7 +26,10 @@ export class CreateUserByAdmin {
   lastName: string;
   email: string;
   role: string;
-  companyName: string;
-  phoneNumber: string;
+  phoneNumber?: string;
+  studentId?: string;
+  employeeId?: string;
+  designation?: string;
+  departmentId?: string;
   password: string;
 }

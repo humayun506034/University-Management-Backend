@@ -1,63 +1,3 @@
-// generator client {
-//   provider = "prisma-client-js"
-// }
-
-// datasource db {
-//   provider = "postgresql"
-//   url      = env("DATABASE_URL")
-// }
-
-// model User {
-//   id                        String    @id @default(uuid())
-//   firstName                 String
-//   lastName                  String
-//   email                     String    @unique
-//   role                      UserRole  @default(STUDENT)
-//   companyName               String
-//   image                     String?
-//   street                    String?
-//   city                      String?
-//   zip                       String?
-//   country                   String?
-//   phoneNumber               String
-//   vatUid                    String?
-//   companyRegistrationNumber String?
-//   password                  String
-//   subject                   String?
-//   registrationOtp           String?
-//   registrationOtpExpireIn   DateTime?
-//   loginOtp                  String?
-//   loginOtpExpireIn          DateTime?
-//   resetPasswordOtp          String?
-//   resetPasswordOtpExpireIn  DateTime?
-//   lastPasswordChangeTime    DateTime?
-//   loginTime                 DateTime?
-//   registrationTime          DateTime?
-//   isVerified                Boolean   @default(false)
-//   isBlocked                 Boolean   @default(false)
-//   isDeleted                 Boolean   @default(false)
-//   createdAt                 DateTime  @default(now())
-//   updatedAt                 DateTime  @updatedAt
-
-// }
-
-// model Message {
-//   id          String   @id @default(uuid())
-//   senderEmail    String
-//   recirecipientEmail String
-//   content     String
-//   createdAt   DateTime @default(now())
-
-// }
-
-// enum UserRole {
-//   SUPER_ADMIN
-//   REGISTRAR
-//   DEPARTMENT_HEAD
-//   FACULTY
-//   STUDENT
-// }
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -68,40 +8,37 @@ datasource db {
 }
 
 model User {
-  id                        String    @id @default(uuid())
-  firstName                 String
-  lastName                  String
-  email                     String    @unique
-  role                      UserRole  @default(STUDENT)
-  companyName               String
-  image                     String?
-  street                    String?
-  city                      String?
-  zip                       String?
-  country                   String?
-  phoneNumber               String
-  vatUid                    String?
-  companyRegistrationNumber String?
-  password                  String
-  subject                   String?
-  registrationOtp           String?
-  registrationOtpExpireIn   DateTime?
-  loginOtp                  String?
-  loginOtpExpireIn          DateTime?
-  resetPasswordOtp          String?
-  resetPasswordOtpExpireIn  DateTime?
-  lastPasswordChangeTime    DateTime?
-  loginTime                 DateTime?
-  registrationTime          DateTime?
-  isVerified                Boolean   @default(false)
-  isBlocked                 Boolean   @default(false)
-  isDeleted                 Boolean   @default(false)
-  createdAt                 DateTime  @default(now())
-  updatedAt                 DateTime  @updatedAt
+  id                       String    @id @default(uuid())
+  firstName                String
+  lastName                 String
+  email                    String    @unique
+  role                     UserRole  @default(STUDENT)
+  image                    String?
+  studentId                String?   @unique
+  employeeId               String?   @unique
+  designation              String?
+  departmentId             String?
+  phoneNumber              String?
+  password                 String
+  registrationOtp          String?
+  registrationOtpExpireIn  DateTime?
+  loginOtp                 String?
+  loginOtpExpireIn         DateTime?
+  resetPasswordOtp         String?
+  resetPasswordOtpExpireIn DateTime?
+  lastPasswordChangeTime   DateTime?
+  loginTime                DateTime?
+  registrationTime         DateTime?
+  isVerified               Boolean   @default(false)
+  isBlocked                Boolean   @default(false)
+  isDeleted                Boolean   @default(false)
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
 
   // 🔁 Relations
-  sentMessages     Message[] @relation("SenderMessages")
-  receivedMessages Message[] @relation("ReceiverMessages")
+  sentMessages     Message[]   @relation("SenderMessages")
+  receivedMessages Message[]   @relation("ReceiverMessages")
+  department       Department? @relation("DepartmentMembers", fields: [departmentId], references: [id])
   headedDepartment Department? @relation("DepartmentHead")
 }
 
@@ -126,7 +63,8 @@ model Department {
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
-  departmentHead User? @relation("DepartmentHead", fields: [departmentHeadId], references: [id])
+  members        User[] @relation("DepartmentMembers")
+  departmentHead User?  @relation("DepartmentHead", fields: [departmentHeadId], references: [id])
 }
 
 enum UserRole {
