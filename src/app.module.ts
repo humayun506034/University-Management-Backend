@@ -7,6 +7,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { MessagingModule } from './messaging/messaging.module';
+import { DepartmentModule } from './department/department.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { MessagingModule } from './messaging/messaging.module';
     RedisModule,
     CacheModule,
     MessagingModule,
+    DepartmentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

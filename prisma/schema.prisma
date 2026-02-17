@@ -102,6 +102,7 @@ model User {
   // 🔁 Relations
   sentMessages     Message[] @relation("SenderMessages")
   receivedMessages Message[] @relation("ReceiverMessages")
+  headedDepartment Department? @relation("DepartmentHead")
 }
 
 model Message {
@@ -116,10 +117,27 @@ model Message {
   Receiver User @relation("ReceiverMessages", fields: [recipientEmail], references: [email])
 }
 
+model Department {
+  id               String           @id @default(uuid())
+  name             String           @unique
+  status           DepartmentStatus @default(ACTIVE)
+  departmentHeadId String?          @unique
+  isDeleted        Boolean          @default(false)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  departmentHead User? @relation("DepartmentHead", fields: [departmentHeadId], references: [id])
+}
+
 enum UserRole {
   SUPER_ADMIN
   REGISTRAR
   DEPARTMENT_HEAD
   FACULTY
   STUDENT
+}
+
+enum DepartmentStatus {
+  ACTIVE
+  INACTIVE
 }
