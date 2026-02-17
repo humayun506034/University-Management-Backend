@@ -25,14 +25,26 @@ export class MessagingController {
     private readonly messagingService: MessagingService,
   ) {}
   @UseGuards(AuthGuard)
-  @Roles(ROLE.ADMIN, ROLE.CUSTOMER)
+  @Roles(
+    ROLE.SUPER_ADMIN,
+    ROLE.REGISTRAR,
+    ROLE.DEPARTMENT_HEAD,
+    ROLE.FACULTY,
+    ROLE.STUDENT,
+  )
   @Get('/messages-list')
   async myselfAllMessagesList(@Req() req: Request & { user: any }) {
     return await this.messagingService.myselfAllMessagesList(req.user.email);
   }
 
   @UseGuards(AuthGuard)
-  @Roles(ROLE.ADMIN, ROLE.CUSTOMER)
+  @Roles(
+    ROLE.SUPER_ADMIN,
+    ROLE.REGISTRAR,
+    ROLE.DEPARTMENT_HEAD,
+    ROLE.FACULTY,
+    ROLE.STUDENT,
+  )
   @Post()
   @UseInterceptors(FileInterceptor('file', { storage: multer.memoryStorage() }))
   async sendMessage(

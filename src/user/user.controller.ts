@@ -34,7 +34,7 @@ export class UserController {
   ) {}
 
   @UseGuards(AuthGuard)
-  @Roles(ROLE.ADMIN)
+  @Roles(ROLE.SUPER_ADMIN, ROLE.REGISTRAR)
   @Get()
   findAll(
     @Query('page') page?: number,
@@ -96,7 +96,7 @@ export class UserController {
     return this.userService.create(userRegistrationData as CreateUserDto);
   }
   @UseGuards(AuthGuard)
-  @Roles(ROLE.ADMIN)
+  @Roles(ROLE.SUPER_ADMIN, ROLE.REGISTRAR)
   @Post('/create-user-without-otp')
   createUserWithoutOtp(@Body() createUserByAdmin: any) {
     return this.userService.createUserWithoutOtp(createUserByAdmin);
@@ -150,7 +150,13 @@ export class UserController {
     return this.userService.verifyForgottenPasswordOtp(email, otp, newPassword);
   }
   @UseGuards(AuthGuard)
-  @Roles(ROLE.CUSTOMER, ROLE.ADMIN)
+  @Roles(
+    ROLE.SUPER_ADMIN,
+    ROLE.REGISTRAR,
+    ROLE.DEPARTMENT_HEAD,
+    ROLE.FACULTY,
+    ROLE.STUDENT,
+  )
   @Patch('update-profile')
   @UseInterceptors(FileInterceptor('file', { storage: multer.memoryStorage() }))
   async updateProfile(
@@ -188,35 +194,41 @@ export class UserController {
 
   @Patch('block-user/:id')
   @UseGuards(AuthGuard)
-  @Roles(ROLE.ADMIN)
+  @Roles(ROLE.SUPER_ADMIN, ROLE.REGISTRAR)
   blockUser(@Param('id') id: string) {
     return this.userService.blockUser(id);
   }
 
   @Patch('unblock-user/:id')
   @UseGuards(AuthGuard)
-  @Roles(ROLE.ADMIN)
+  @Roles(ROLE.SUPER_ADMIN, ROLE.REGISTRAR)
   unblockUser(@Param('id') id: string) {
     return this.userService.unblockUser(id);
   }
 
   @Patch('change-role/:id')
   @UseGuards(AuthGuard)
-  @Roles(ROLE.ADMIN)
+  @Roles(ROLE.SUPER_ADMIN, ROLE.REGISTRAR)
   changeRole(@Param('id') id: string, @Body('role') role: UserRole) {
     return this.userService.changeRole(id, role);
   }
 
   @Delete('delete-user/:id')
   @UseGuards(AuthGuard)
-  @Roles(ROLE.ADMIN)
+  @Roles(ROLE.SUPER_ADMIN, ROLE.REGISTRAR)
   deleteUser(@Param('id') id: string) {
     return this.userService.deleteUser(id);
   }
 
   @Delete('delete-myself-account')
   @UseGuards(AuthGuard)
-  @Roles(ROLE.ADMIN, ROLE.CUSTOMER)
+  @Roles(
+    ROLE.SUPER_ADMIN,
+    ROLE.REGISTRAR,
+    ROLE.DEPARTMENT_HEAD,
+    ROLE.FACULTY,
+    ROLE.STUDENT,
+  )
   deleteMyselfAccount(@Req() req: Request & { user: any }) {
     return this.userService.deleteMyselfAccount(req.user.id);
   }

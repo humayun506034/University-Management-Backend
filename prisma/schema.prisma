@@ -12,7 +12,7 @@
 //   firstName                 String
 //   lastName                  String
 //   email                     String    @unique
-//   role                      UserRole  @default(CUSTOMER)
+//   role                      UserRole  @default(STUDENT)
 //   companyName               String
 //   image                     String?
 //   street                    String?
@@ -51,8 +51,11 @@
 // }
 
 // enum UserRole {
-//   CUSTOMER
-//   ADMIN
+//   SUPER_ADMIN
+//   REGISTRAR
+//   DEPARTMENT_HEAD
+//   FACULTY
+//   STUDENT
 // }
 
 generator client {
@@ -69,7 +72,7 @@ model User {
   firstName                 String
   lastName                  String
   email                     String    @unique
-  role                      UserRole  @default(CUSTOMER)
+  role                      UserRole  @default(STUDENT)
   companyName               String
   image                     String?
   street                    String?
@@ -114,6 +117,9 @@ model Message {
 }
 
 enum UserRole {
-  CUSTOMER
-  ADMIN
+  SUPER_ADMIN
+  REGISTRAR
+  DEPARTMENT_HEAD
+  FACULTY
+  STUDENT
 }
