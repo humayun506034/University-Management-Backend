@@ -9,7 +9,6 @@ export async function sendVerificationEmail(
   const brevoApiKey = configService.get<string>('BREVO_API_KEY');
   const brevoSenderEmail = configService.get<string>('BREVO_SENDER_EMAIL');
   const brevoSenderName ='CampusMS';
-
   if (!brevoApiKey || !brevoSenderEmail) {
     return {
       success: false,
