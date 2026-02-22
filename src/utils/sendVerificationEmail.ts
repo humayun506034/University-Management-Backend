@@ -1,5 +1,4 @@
 import { ConfigService } from '@nestjs/config';
-
 export async function sendVerificationEmail(
   configService: ConfigService,
   to: string,
